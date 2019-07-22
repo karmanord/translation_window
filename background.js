@@ -1,12 +1,3 @@
-chrome.contextMenus.create({
-  "title" : "原文と翻訳文を比較する",
-  "type" : "normal",
-//   "onclick" : excecute(),
-});
-chrome.browserAction.onClicked.addListener(function(tab){
-	excecute(tab);
-});
-
 function excecute(tab){
 	let windowWidth = 0;
 	let windowHeight = 0;
@@ -29,22 +20,38 @@ function excecute(tab){
 										}
 									);});
 							
-		chrome.windows.create({
-								url: "http://translate.google.com/translate?u=" + tab.url, 
-								left: windowWidth / 2 + screen.availLeft,
-								top: screen.availTop,
-								width: windowWidth / 2, 
-								height: windowHeight
-							}, 
-							tab => {
-									chrome.tabs.executeScript(tab.id,
-										{
-											code: `searchBar = document.getElementById('wtgbr');
-												   translationFromTo = document.getElementById('gt-c');
-												   body.removeChild(searchBar);`
-										}
-									)
-							});
-	});
+		chrome.windows.create(
+								{
+									url: "http://translate.google.com/translate?u=" + tab.url, 
+									left: windowWidth / 2 + screen.availLeft,
+									top: screen.availTop,
+									width: windowWidth / 2, 
+									height: windowHeight
+								}, 
+								tab => {
+										document.addEventListener('DOMContentLoaded', function() {
+											chrome.tabs.executeScript(tab.id,
+												{
+													code: `searchBar = document.getElementById('wtgbr');
+														translationFromTo = document.getElementById('gt-c');
+														body.removeChild(searchBar);
+														body.removeChild(translationFromTo);`
+												}
+											)
+										});
+								});
+	});	
 }
 
+chrome.runtime.onInstalled.addListener(function () {
+	chrome.contextMenus.create({
+		"title" : "原文と翻訳文を比較する",
+		"type" : "normal",
+	});
+});
+chrome.contextMenus.onClicked.addListener(function(info, tab){
+	excecute(tab);
+});
+chrome.browserAction.onClicked.addListener(function(tab){
+	excecute(tab);
+});
