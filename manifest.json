@@ -2,9 +2,11 @@
 	"name": "Translation Window",
 	"version": "1.0",
 	"description": "Build an Extension!",
-	"permissions": ["tabs"],
+	"permissions": ["tabs","contextMenus","background","http://*/*", "https://*/*"],
+	"background": {
+		"scripts": ["background.js", "hot-reload.js"]
+     },
 	"browser_action": {
-		"default_popup": "popup.html",
 		"default_title": "Translation Window"
 	},
 	"manifest_version": 2
