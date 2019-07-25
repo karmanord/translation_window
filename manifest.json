@@ -9,5 +9,22 @@
 	"browser_action": {
 		"default_title": "Translation Window"
 	},
+	"content_scripts": [
+		{
+			"matches": ["http://*/*", "https://*/*"],
+			"js": ["scroll.js"]
+		}
+	],
+	"commands": {
+		"executeTranslation": {
+			"description": "Open Translation Window",
+				"global": true, 
+				"suggested_key": { 
+					"default": "Ctrl+Shift+P",
+					"windows": "Ctrl+Shift+P",
+					"mac": "Command+Shift+X"
+				}
+		}
+	},
 	"manifest_version": 2
 }

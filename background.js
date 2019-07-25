@@ -1,39 +1,39 @@
-function execute(tab){
-	let windowWidth = 0;
-	let windowHeight = 0;
-	// alert(screen.availWidth)
-	chrome.windows.getCurrent(function(w) {
-		windowWidth = screen.availWidth; //タスクバーなどを除くモニタ有効域の幅
-		windowHeight = screen.availHeight; //タスクバーなどを除くモニタ有効域の高さ
+let originalTabId = -1;
+let translateTabId = -1;
 
+function execute(tab){
+	originalTabId = tab.id
+	chrome.windows.getCurrent(function(w) {
 		chrome.windows.update(w.id,
 							{
 								left: screen.availLeft,
 								top: screen.availTop,
-								width: windowWidth / 2, 
-								height: windowHeight
-							}, 
-							function(){
-									chrome.tabs.executeScript(tab.id,
+								width: screen.availWidth / 2, 
+								height: screen.availHeight
+							}, function(){
+									chrome.tabs.executeScript(originalTabId,
 										{
 											code: 'window.scrollTo(0, 0);'
 										}
 									);});
-		chrome.tabs.reload(tab.id);
+		chrome.tabs.reload(originalTabId);
 		chrome.windows.create(
 								{
 									url: "http://translate.google.com/translate?u=" + tab.url, 
-									left: windowWidth / 2 + screen.availLeft,
+									left: screen.availWidth / 2 + screen.availLeft,
 									top: screen.availTop,
-									width: windowWidth / 2, 
-									height: windowHeight
-								}, 
+									width: screen.availWidth / 2, 
+									height: screen.availHeight
+								}, function(window){
+									translateTabId = window.tabs[0].id
+								} 
 		)
 	});	
 }
 
+// 翻訳ページ起動完了時、上部のGoogle翻訳バーを削除する
 chrome.tabs.onUpdated.addListener(function(tabid,info,tab){
-  if (info.status === 'complete') {
+  if (info.status === 'complete' && translateTabId === tabid) {
     chrome.tabs.executeScript(tabid,{
 		code: `let searchBar = document.getElementById('wtgbr');
 				let langSelect = document.getElementById('gt-c');
@@ -45,16 +45,59 @@ chrome.tabs.onUpdated.addListener(function(tabid,info,tab){
     });
   }
 });
-chrome.runtime.onInstalled.addListener(function () {
+
+let currentTabId = "";
+let date = new Date();
+let prevTimeStamp = date.getTime();
+let prevElement = "";
+chrome.runtime.onConnect.addListener(function(port) {
+	if (port.name == "sync_scroll") {
+		port.onMessage.addListener(function(msg, sendingPort) {
+			date = new Date();
+			let currentTimeStamp = date.getTime();
+			if (currentTabId && currentTabId !== sendingPort.sender.tab.id && currentTimeStamp - prevTimeStamp < 500){
+				return;
+			}
+			prevTimeStamp = currentTimeStamp;
+			currentTabId = sendingPort.sender.tab.id;
+			let sendTabId = "";
+			if (originalTabId === currentTabId) {
+				sendTabId = translateTabId;
+			} else {
+				sendTabId = originalTabId;
+			}
+			let currentElement = document.elementFromPoint(screen.availWidth / 2, 100);
+			let x = 0;
+			let y = 0;
+			if (prevElement === currentElement){
+				
+			} else {
+				prevElement = currentElement;
+			}
+			chrome.tabs.executeScript(sendTabId,
+				{
+					code: `window.scrollTo(${msg.window_scrollX}, ${msg.window_scrollY});`
+				}
+			)
+		});
+	}
+});
+
+// 右クリックのメニュー内容
+chrome.runtime.onInstalled.addListener(function() {
 	chrome.contextMenus.create({
-		"id" : "menu",
-		"title" : "原文と翻訳文を比較する",
-		"type" : "normal",
+		"id": "menu",
+		"title": "原文と翻訳文を比較する",
+		"type": "normal",
 	});
 });
-chrome.contextMenus.onClicked.addListener(function(info, tab){
+
+// ブラウザのアイコン押下時
+chrome.browserAction.onClicked.addListener(function(tab){
 	execute(tab);
 });
-chrome.browserAction.onClicked.addListener(function(tab){
+
+// 右クリックのメニュー押下時
+chrome.contextMenus.onClicked.addListener(function(info, tab){
 	execute(tab);
 });
