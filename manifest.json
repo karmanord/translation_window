@@ -12,19 +12,9 @@
 	"content_scripts": [
 		{
 			"matches": ["http://*/*", "https://*/*"],
+			"all_frames": true,
 			"js": ["scroll.js"]
 		}
 	],
-	"commands": {
-		"executeTranslation": {
-			"description": "Open Translation Window",
-				"global": true, 
-				"suggested_key": { 
-					"default": "Ctrl+Shift+P",
-					"windows": "Ctrl+Shift+P",
-					"mac": "Command+Shift+X"
-				}
-		}
-	},
 	"manifest_version": 2
 }

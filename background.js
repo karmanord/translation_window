@@ -19,7 +19,8 @@ function execute(tab){
 		chrome.tabs.reload(originalTabId);
 		chrome.windows.create(
 								{
-									url: "http://translate.google.com/translate?u=" + tab.url, 
+									url: tab.url, 
+									// url: "http://translate.google.com/translate?u=" + tab.url, 
 									left: screen.availWidth / 2 + screen.availLeft,
 									top: screen.availTop,
 									width: screen.availWidth / 2, 
@@ -50,9 +51,22 @@ let currentTabId = "";
 let date = new Date();
 let prevTimeStamp = date.getTime();
 let prevElement = "";
+
+let shift = false;
+document.onkeydown = function(e) {
+  shift = e.shiftKey;
+}
+document.onkeyup = function(e) {
+  shift = e.shiftKey;
+}
 chrome.runtime.onConnect.addListener(function(port) {
 	if (port.name == "sync_scroll") {
+		console.log(shift);
 		port.onMessage.addListener(function(msg, sendingPort) {
+			// console.log(currentTabId);
+			// console.log(translateTabId);
+			// console.log(sendingPort.sender.tab.id);
+
 			date = new Date();
 			let currentTimeStamp = date.getTime();
 			if (currentTabId && currentTabId !== sendingPort.sender.tab.id && currentTimeStamp - prevTimeStamp < 500){
@@ -66,19 +80,26 @@ chrome.runtime.onConnect.addListener(function(port) {
 			} else {
 				sendTabId = originalTabId;
 			}
-			let currentElement = document.elementFromPoint(screen.availWidth / 2, 100);
-			let x = 0;
-			let y = 0;
-			if (prevElement === currentElement){
-				
-			} else {
-				prevElement = currentElement;
-			}
-			chrome.tabs.executeScript(sendTabId,
-				{
-					code: `window.scrollTo(${msg.window_scrollX}, ${msg.window_scrollY});`
-				}
-			)
+			// let currentElement = msg.querySelector;
+			// if (!prevElement || prevElement === currentElement){
+				let X = msg.window_scrollX;
+				let Y = msg.window_scrollY;
+				chrome.tabs.executeScript(sendTabId,
+					{
+						code: `window.scrollTo(${X}, ${Y});`
+					}
+				)
+			// } else {
+			// 	console.log(msg.element);
+			// 	chrome.tabs.executeScript(sendTabId,
+			// 		{
+			// 			// code: `${msg.element}.scrollIntoView();`
+			// 		}
+			// 	)
+			// }
+			// prevElement = currentElement;
+				// console.log(prevElement);
+
 		});
 	}
 });
